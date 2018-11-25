@@ -1,0 +1,9 @@
+# Notes to add to simple-vpc.tf
+
+provisioner "local-exec" {
+    command = "echo ${aws_instance.proj007_instance.public_ip} > /tmp/ip_address.txt"
+  }
+
+  provisioner "local-exec" {
+    command = "sudo /usr/bin/yum install httpd;"
+  }

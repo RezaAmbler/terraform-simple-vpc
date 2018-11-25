@@ -1,0 +1,8 @@
+packer-notes.txt
+
+Build 'amazon-ebs' errored: 2 error(s) occurred:
+
+* Error Copying AMI (ami-04f756e789e2c7639) to region (us-west-1): InvalidRequest: Snapshot snap-0bab5c263694ba8a6 is encrypted. Creating unencrypted copy from an encrypted snapshot is not supported.
+	status code: 400, request id: bea8a6e8-d041-4898-93b2-75a34ebaef4d
+* Error Copying AMI (ami-04f756e789e2c7639) to region (us-east-1): InvalidRequest: Snapshot snap-0bab5c263694ba8a6 is encrypted. Creating unencrypted copy from an encrypted snapshot is not supported.
+	status code: 400, request id: 3a7f22d4-fb6f-4edc-9da5-1e6929ac47d3
