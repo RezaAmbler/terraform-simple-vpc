@@ -36,7 +36,9 @@ variable "az03" {
 
 variable "ssh_key_pair" {
   description = "SSH Key Pair to be used for EC2"
-  default     = "Reza-East-1"
+  default     = "Reza-AWS"
+
+  # Convert this to a lookup map based on region
 }
 
 variable "amis" {
@@ -304,6 +306,7 @@ resource "aws_route_table_association" "az-02-private-rtb" {
 resource "aws_security_group" "bastion_sg" {
   name        = "bastion-host-sg"
   description = "bastion host aws_security_group"
+  vpc_id      = "${aws_vpc.vpc.id}"
 
   egress {
     from_port   = 0
@@ -318,8 +321,6 @@ resource "aws_security_group" "bastion_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  vpc_id = "${aws_vpc.vpc.id}"
 
   tags {
     Name    = "Bastion SG"
@@ -384,6 +385,7 @@ resource "aws_instance" "bastion" {
 resource "aws_security_group" "web-app-sg" {
   name        = "web-app-sg"
   description = "Web App Server Security Group"
+  vpc_id      = "${aws_vpc.vpc.id}"
 
   egress {
     from_port   = 0
@@ -394,7 +396,7 @@ resource "aws_security_group" "web-app-sg" {
 
   ingress {
     from_port   = 0
-    to_port     = 22
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
 
@@ -419,10 +421,9 @@ resource "aws_instance" "webapp01" {
   subnet_id                   = "${aws_subnet.az-01-private.id}"
   associate_public_ip_address = true
 
-  #vpc_security_group_ids = [
-  #  "${aws_security_group.web-app-sg.id}",
-  #]
-
+  vpc_security_group_ids = [
+    "${aws_security_group.web-app-sg.id}",
+  ]
 
   #provisioner "local-exec" {
   #  command = "curl http://169.254.169.254/latest/meta-data/instance-id/ > /var/www/html/index.html"
@@ -447,12 +448,13 @@ resource "aws_instance" "webapp02" {
   subnet_id                   = "${aws_subnet.az-02-private.id}"
   associate_public_ip_address = true
 
-  #vpc_security_group_ids = [
-  #  "${aws_security_group.web-app-sg.id}",
-  #]
+  vpc_security_group_ids = [
+    "${aws_security_group.web-app-sg.id}",
+  ]
 
   #key_name = "Reza-East-1"
   key_name = "${var.ssh_key_pair}"
+
   tags {
     Name    = "WEB APP 02"
     Project = "PROJ007"
@@ -483,9 +485,21 @@ resource "aws_db_instance" "default" {
 # END RDS INSTANCE
 
 resource "aws_elb" "elb" {
-  name               = "terraform-elb-example"
-  availability_zones = ["${data.aws_availability_zones.all.names}"]
-  security_groups    = ["${aws_security_group.elb_sg.id}"]
+  # Classic ELB method
+  name = "terraform-elb-example"
+
+  #availability_zones = ["${data.aws_availability_zones.all.names}"]
+  security_groups = ["${aws_security_group.elb_sg.id}"]
+  subnets         = ["${aws_subnet.az-01-private.id}"]
+
+  cross_zone_load_balancing = true
+
+  instances = [
+    "${aws_instance.webapp01.id}",
+    "${aws_instance.webapp02.id}",
+  ]
+
+  # Alternate method : https://www.terraform.io/docs/providers/aws/r/elb_attachment.html
 
   listener {
     lb_port           = 80
@@ -493,7 +507,6 @@ resource "aws_elb" "elb" {
     instance_port     = 80
     instance_protocol = "http"
   }
-
   health_check {
     healthy_threshold   = 2
     unhealthy_threshold = 2
@@ -501,10 +514,16 @@ resource "aws_elb" "elb" {
     interval            = 30
     target              = "HTTP:${var.http_server_port}/"
   }
+  tags {
+    Name    = "WEB ELB"
+    Project = "PROJ007"
+    BU      = "PU"
+  }
 }
 
 resource "aws_security_group" "elb_sg" {
-  name = "terraform-elb-example-sg"
+  name   = "terraform-elb-example-sg"
+  vpc_id = "${aws_vpc.vpc.id}"
 
   ingress {
     from_port   = "${var.http_server_port}"
@@ -518,6 +537,12 @@ resource "aws_security_group" "elb_sg" {
     to_port     = 0
     protocol    = -1
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name    = "WEB ELB SG"
+    Project = "PROJ007"
+    BU      = "PU"
   }
 }
 
