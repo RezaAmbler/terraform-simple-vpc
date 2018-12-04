@@ -423,6 +423,11 @@ resource "aws_instance" "webapp01" {
   #  "${aws_security_group.web-app-sg.id}",
   #]
 
+
+  #provisioner "local-exec" {
+  #  command = "curl http://169.254.169.254/latest/meta-data/instance-id/ > /var/www/html/index.html"
+  #}
+
   #key_name = "Reza-East-1"
   key_name = "${var.ssh_key_pair}"
   tags {
@@ -492,7 +497,7 @@ resource "aws_elb" "elb" {
   health_check {
     healthy_threshold   = 2
     unhealthy_threshold = 2
-    timeout             = 30
+    timeout             = 3
     interval            = 30
     target              = "HTTP:${var.http_server_port}/"
   }
