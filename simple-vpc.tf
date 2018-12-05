@@ -143,7 +143,6 @@ resource "aws_internet_gateway" "default" {
   }
 }
 
-/*
 resource "aws_security_group" "nat_sg" {
   name        = "test_vpc_nat"
   description = "a test nat gateway for the private subnet"
@@ -151,7 +150,7 @@ resource "aws_security_group" "nat_sg" {
   egress {
     from_port   = 0
     to_port     = 0
-    protocol    = "tcp"
+    protocol    = -1
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -163,7 +162,6 @@ resource "aws_security_group" "nat_sg" {
     BU      = "PU"
   }
 }
-*/
 
 # EIP needed for the NAT Gateway
 resource "aws_eip" "ngw-eip" {
@@ -444,12 +442,13 @@ resource "aws_instance" "webapp01" {
     "${aws_security_group.web-app-sg.id}",
   ]
 
-  #provisioner "local-exec" {
-  #  command = "curl http://169.254.169.254/latest/meta-data/instance-id/ > /var/www/html/index.html"
-  #}
+  provisioner "local-exec" {
+    command = "curl http://169.254.169.254/latest/meta-data/instance-id/ > /var/www/html/index.html"
+  }
 
   #key_name = "Reza-East-1"
   key_name = "${var.ssh_key_pair}"
+
   tags {
     Name    = "WEB APP 01"
     Project = "PROJ007"
