@@ -36,10 +36,6 @@ variable "az03" {
 
 variable "ssh_key_pair" {
   description = "SSH Key Pair to be used for EC2"
-  #default     = "Reza-AWS"
-  default     = "tbnvirginia"
-
-  # Convert this to a lookup map based on region
 }
 
 variable "bastion_ami" {
@@ -442,7 +438,7 @@ resource "aws_instance" "webapp01" {
   instance_type               = "t2.nano"
   availability_zone           = "${var.az01}"
   subnet_id                   = "${aws_subnet.az-01-private.id}"
-  associate_public_ip_address = true
+  associate_public_ip_address = false
 
   vpc_security_group_ids = [
     "${aws_security_group.web-app-sg.id}",
@@ -469,7 +465,7 @@ resource "aws_instance" "webapp02" {
   instance_type               = "t2.nano"
   availability_zone           = "${var.az02}"
   subnet_id                   = "${aws_subnet.az-02-private.id}"
-  associate_public_ip_address = true
+  associate_public_ip_address = false
 
   vpc_security_group_ids = [
     "${aws_security_group.web-app-sg.id}",
