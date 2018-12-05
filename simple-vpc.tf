@@ -36,21 +36,44 @@ variable "az03" {
 
 variable "ssh_key_pair" {
   description = "SSH Key Pair to be used for EC2"
-  default     = "Reza-AWS"
+  #default     = "Reza-AWS"
+  default     = "tbnvirginia"
 
   # Convert this to a lookup map based on region
 }
 
-variable "amis" {
+variable "bastion_ami" {
   description = "AMIs by region"
 
   default = {
-    "us-west-2" = "ami-01bbe152bf19d0289"
-    "us-east-1" = "ami-009d6802948d06e52" # AWS Linux 2
+    "us-east-1" = "ami-095042c62223364e4" # AWS Linux 2
+    "us-west-2" = "ami-002638582918110bf"
 
     #"eu-west-1" = "ami-f1810f86"          # ubuntu 14.04 LTS
   }
 }
+
+variable "webapp_ami" {
+  description = "AMIs by region"
+
+  default = {
+    "us-east-1" = "ami-095042c62223364e4" # AWS Linux 2
+    "us-west-2" = "ami-002638582918110bf"
+
+    #"eu-west-1" = "ami-f1810f86"          # ubuntu 14.04 LTS
+  }
+}
+
+#variable "amis" {
+#  description = "AMIs by region"
+#
+#  default = {
+#    "us-west-2" = "ami-002638582918110bf"
+#    "us-east-1" = "ami-095042c62223364e4" # AWS Linux 2
+#
+#    #"eu-west-1" = "ami-f1810f86"          # ubuntu 14.04 LTS
+#  }
+#}
 
 variable "http_server_port" {
   description = "http web server listener port"
@@ -346,7 +369,7 @@ resource "aws_eip_association" "bastion_eip" {
 }
 
 resource "aws_instance" "bastion" {
-  ami               = "${lookup(var.amis, var.aws_region)}"
+  ami               = "${lookup(var.bastion_ami, var.aws_region)}"
   instance_type     = "t2.nano"
   availability_zone = "${var.az01}"
   subnet_id         = "${aws_subnet.az-01-public.id}"
@@ -415,7 +438,7 @@ resource "aws_security_group" "web-app-sg" {
 }
 
 resource "aws_instance" "webapp01" {
-  ami                         = "${lookup(var.amis, var.aws_region)}"
+  ami                         = "${lookup(var.webapp_ami, var.aws_region)}"
   instance_type               = "t2.nano"
   availability_zone           = "${var.az01}"
   subnet_id                   = "${aws_subnet.az-01-private.id}"
@@ -442,7 +465,7 @@ resource "aws_instance" "webapp01" {
 
 # WEB APP 2
 resource "aws_instance" "webapp02" {
-  ami                         = "${lookup(var.amis, var.aws_region)}"
+  ami                         = "${lookup(var.webapp_ami, var.aws_region)}"
   instance_type               = "t2.nano"
   availability_zone           = "${var.az02}"
   subnet_id                   = "${aws_subnet.az-02-private.id}"
