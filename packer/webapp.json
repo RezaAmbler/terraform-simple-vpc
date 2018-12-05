@@ -34,7 +34,7 @@
         "inline": [
           "sleep 30",
           "sudo yum update",
-          "sudo yum install httpd",
+          "sudo yum install httpd -y",
           "sudo systemctl enable httpd",
           "sudo yum upgrade -y"
         ]
