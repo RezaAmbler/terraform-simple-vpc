@@ -16,6 +16,22 @@
 #DATA
 data "aws_availability_zones" "all" {}
 
+data "aws_ami" "bastion_ami" {
+  most_recent = true
+  filter {
+    name      = "tag:Build_Type"
+    values    = ["simple_vpc_bastion"]
+  }
+}
+
+data "aws_ami" "webapp_ami" {
+  most_recent = true
+  filter {
+    name      = "tag:Build_Type"
+    values    = ["simple_vpc_webapp"]
+  }
+}
+
 # USER DEFINED
 variable "aws_region" {
   description = "EC2 Region for the VPC"
@@ -37,39 +53,6 @@ variable "az03" {
 variable "ssh_key_pair" {
   description = "SSH Key Pair to be used for EC2"
 }
-
-variable "bastion_ami" {
-  description = "AMIs by region"
-
-  default = {
-    "us-east-1" = "ami-095042c62223364e4" # AWS Linux 2
-    "us-west-2" = "ami-002638582918110bf"
-
-    #"eu-west-1" = "ami-f1810f86"          # ubuntu 14.04 LTS
-  }
-}
-
-variable "webapp_ami" {
-  description = "AMIs by region"
-
-  default = {
-    "us-east-1" = "ami-095042c62223364e4" # AWS Linux 2
-    "us-west-2" = "ami-002638582918110bf"
-
-    #"eu-west-1" = "ami-f1810f86"          # ubuntu 14.04 LTS
-  }
-}
-
-#variable "amis" {
-#  description = "AMIs by region"
-#
-#  default = {
-#    "us-west-2" = "ami-002638582918110bf"
-#    "us-east-1" = "ami-095042c62223364e4" # AWS Linux 2
-#
-#    #"eu-west-1" = "ami-f1810f86"          # ubuntu 14.04 LTS
-#  }
-#}
 
 variable "http_server_port" {
   description = "http web server listener port"
@@ -363,7 +346,7 @@ resource "aws_eip_association" "bastion_eip" {
 }
 
 resource "aws_instance" "bastion" {
-  ami               = "${lookup(var.bastion_ami, var.aws_region)}"
+  ami               = "${data.aws_ami.bastion_ami.id}"
   instance_type     = "t2.nano"
   availability_zone = "${var.az01}"
   subnet_id         = "${aws_subnet.az-01-public.id}"
@@ -378,15 +361,6 @@ resource "aws_instance" "bastion" {
   ]
   #key_name = "Reza-East-1"
   key_name = "${var.ssh_key_pair}"
-
-  #provisioner "local-exec" {
-  #  command = "sudo /usr/bin/yum -y update;"
-  #}
-
-
-  #provisioner "local-exec" {
-  #  command = "echo ${aws_instance.proj007_instance.public_ip} > /var/www/html/index.html"
-  #}
 
   tags {
     Name    = "ec2_bastion_example"
@@ -432,7 +406,7 @@ resource "aws_security_group" "web-app-sg" {
 }
 
 resource "aws_instance" "webapp01" {
-  ami                         = "${lookup(var.webapp_ami, var.aws_region)}"
+  ami                         = "${data.aws_ami.webapp_ami.id}"
   instance_type               = "t2.nano"
   availability_zone           = "${var.az01}"
   subnet_id                   = "${aws_subnet.az-01-private.id}"
@@ -442,9 +416,10 @@ resource "aws_instance" "webapp01" {
     "${aws_security_group.web-app-sg.id}",
   ]
 
-  provisioner "local-exec" {
-    command = "curl http://169.254.169.254/latest/meta-data/instance-id/ > /var/www/html/index.html"
-  }
+  user_data = <<-EOF
+    #!/bin/bash
+    curl http://169.254.169.254/latest/meta-data/instance-id/ | sudo tee /var/www/html/index.html
+    EOF
 
   #key_name = "Reza-East-1"
   key_name = "${var.ssh_key_pair}"
@@ -460,7 +435,7 @@ resource "aws_instance" "webapp01" {
 
 # WEB APP 2
 resource "aws_instance" "webapp02" {
-  ami                         = "${lookup(var.webapp_ami, var.aws_region)}"
+  ami                         = "${data.aws_ami.webapp_ami.id}"
   instance_type               = "t2.nano"
   availability_zone           = "${var.az02}"
   subnet_id                   = "${aws_subnet.az-02-private.id}"
@@ -469,6 +444,11 @@ resource "aws_instance" "webapp02" {
   vpc_security_group_ids = [
     "${aws_security_group.web-app-sg.id}",
   ]
+
+  user_data = <<-EOF
+    #!/bin/bash
+    curl http://169.254.169.254/latest/meta-data/instance-id/ | sudo tee /var/www/html/index.html
+    EOF
 
   #key_name = "Reza-East-1"
   key_name = "${var.ssh_key_pair}"

@@ -21,21 +21,22 @@
         "OS_Version": "AWS Linux 2",
         "Release": "v.1.2.3.4",
         "Base_AMI_Name": "{{ .SourceAMIName }}",
-        "Extra": "{{ .SourceAMITags.TagName }}"
+        "Extra": "{{ .SourceAMITags.TagName }}",
+        "Build_Type": "simple_vpc_bastion"
       },
       "snapshot_tags": {
         "Snapshot_Specification": true
       }
     }
   ],
-    "provisioners": [
-      {
-        "type": "shell",
-        "inline": [
-          "sleep 30",
-          "sudo yum update",
-          "sudo yum upgrade -y"
-        ]
-      }
-    ]
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "sleep 30",
+        "sudo yum update",
+        "sudo yum upgrade -y"
+      ]
+    }
+  ]
 }
