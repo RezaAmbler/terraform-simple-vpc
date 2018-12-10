@@ -34,7 +34,7 @@
       "type": "shell",
       "inline": [
         "sleep 30",
-        "sudo yum update",
+        "sudo yum update -y",
         "sudo yum upgrade -y"
       ]
     }
