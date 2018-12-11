@@ -488,7 +488,7 @@ resource "aws_elb" "elb" {
 
   #availability_zones = ["${data.aws_availability_zones.all.names}"]
   security_groups = ["${aws_security_group.elb_sg.id}"]
-  subnets         = ["${aws_subnet.az-01-private.id}"]
+  subnets         = ["${aws_subnet.az-01-public.id}","${aws_subnet.az-02-public.id}"]
 
   cross_zone_load_balancing = true
 
