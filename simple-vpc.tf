@@ -18,17 +18,19 @@ data "aws_availability_zones" "all" {}
 
 data "aws_ami" "bastion_ami" {
   most_recent = true
+
   filter {
-    name      = "tag:Build_Type"
-    values    = ["simple_vpc_bastion"]
+    name   = "tag:Build_Type"
+    values = ["simple_vpc_bastion"]
   }
 }
 
 data "aws_ami" "webapp_ami" {
   most_recent = true
+
   filter {
-    name      = "tag:Build_Type"
-    values    = ["simple_vpc_webapp"]
+    name   = "tag:Build_Type"
+    values = ["simple_vpc_webapp"]
   }
 }
 
@@ -88,6 +90,10 @@ variable "private_subnet_cidr_02" {
 
 variable "aws_profile" {
   description = "AWS profile to use"
+}
+
+variable "db_password" {
+  description = "Database password"
 }
 
 # END VARIABLES
@@ -361,7 +367,6 @@ resource "aws_instance" "bastion" {
   ]
   #key_name = "Reza-East-1"
   key_name = "${var.ssh_key_pair}"
-
   tags {
     Name    = "ec2_bastion_example"
     Project = "PROJ007"
@@ -465,30 +470,34 @@ resource "aws_instance" "webapp02" {
 
 # RDS INSTANCE 
 
-/*
-resource "aws_db_instance" "default" {
+resource "aws_db_instance" "rds" {
   allocated_storage    = 10
   storage_type         = "gp2"
   engine               = "mysql"
   engine_version       = "5.7"
   instance_class       = "db.t2.micro"
-  name                 = "RDS DB TEST"
+  name                 = "RDSDBTEST"
   username             = "foo"
-  password             = "foobarbaz"
+  password             = "${var.db_password}"
   parameter_group_name = "default.mysql5.7"
   availability_zone    = "${var.az01}"
-}
-*/
 
-# END RDS INSTANCE
+  tags {
+    Name    = "WEB APP 02"
+    Project = "PROJ007"
+    BU      = "PU"
+  }
+}
 
 resource "aws_elb" "elb" {
+  # END RDS INSTANCE
+
   # Classic ELB method
   name = "terraform-elb-example"
 
   #availability_zones = ["${data.aws_availability_zones.all.names}"]
   security_groups = ["${aws_security_group.elb_sg.id}"]
-  subnets         = ["${aws_subnet.az-01-public.id}","${aws_subnet.az-02-public.id}"]
+  subnets         = ["${aws_subnet.az-01-public.id}", "${aws_subnet.az-02-public.id}"]
 
   cross_zone_load_balancing = true
 
@@ -555,14 +564,22 @@ output "bastion_eip_ip" {
   value = "${aws_eip.bastion_eip.public_ip}"
 }
 
-output "webapp01_public_ip" {
-  value = "${aws_instance.webapp01.public_ip}"
+output "webapp01_private_ip" {
+  value = "${aws_instance.webapp01.private_ip}"
 }
 
-output "webapp02_public_ip" {
-  value = "${aws_instance.webapp02.public_ip}"
+output "webapp02_private_ip" {
+  value = "${aws_instance.webapp02.private_ip}"
 }
 
 output "elb_dns_name" {
   value = "${aws_elb.elb.dns_name}"
+}
+
+output "aws_rds_instance_id" {
+  value = "${aws_db_instance.rds.id}"
+}
+
+output "aws_rds_endpoint" {
+  value = "${aws_db_instance.rds.endpoint}"
 }
