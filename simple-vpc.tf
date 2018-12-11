@@ -421,9 +421,27 @@ resource "aws_instance" "webapp01" {
     "${aws_security_group.web-app-sg.id}",
   ]
 
+  ebs_block_device = {
+    volume_type           = "gp2"
+    volume_size           = "20"
+    delete_on_termination = true
+    encrypted             = true
+    device_name           = "/dev/sdb"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
   user_data = <<-EOF
     #!/bin/bash
-    curl http://169.254.169.254/latest/meta-data/instance-id/ | sudo tee /var/www/html/index.html
+    /usr/bin/curl http://169.254.169.254/latest/meta-data/instance-id/ | sudo tee /var/www/html/index.html
+    sudo /usr/sbin/parted /dev/sdb mklabel gpt
+    sudo /usr/sbin/parted -a opt /dev/sdb mkpart primary ext4 0% 100%
+    sudo /usr/sbin/mkfs.ext4 -L datapartition /dev/sdb1
+    sudo /usr/bin/mkdir /opt/foo
+    sudo /usr/bin/mount /dev/sdb1 /opt/foo
+    /usr/bin/curl http://169.254.169.254/latest/meta-data/instance-id/ | sudo tee /opt/foo/instance-id.txt
     EOF
 
   #key_name = "Reza-East-1"
