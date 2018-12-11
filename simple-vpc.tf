@@ -423,7 +423,7 @@ resource "aws_instance" "webapp01" {
 
   ebs_block_device = {
     volume_type           = "gp2"
-    volume_size           = "20"
+    volume_size           = "30"
     delete_on_termination = true
     encrypted             = true
     device_name           = "/dev/sdb"
@@ -433,16 +433,7 @@ resource "aws_instance" "webapp01" {
     create_before_destroy = true
   }
 
-  user_data = <<-EOF
-    #!/bin/bash
-    /usr/bin/curl http://169.254.169.254/latest/meta-data/instance-id/ | sudo tee /var/www/html/index.html
-    sudo /usr/sbin/parted /dev/sdb mklabel gpt
-    sudo /usr/sbin/parted -a opt /dev/sdb mkpart primary ext4 0% 100%
-    sudo /usr/sbin/mkfs.ext4 -L datapartition /dev/sdb1
-    sudo /usr/bin/mkdir /opt/foo
-    sudo /usr/bin/mount /dev/sdb1 /opt/foo
-    /usr/bin/curl http://169.254.169.254/latest/meta-data/instance-id/ | sudo tee /opt/foo/instance-id.txt
-    EOF
+  user_data = "${file("user-data.sh")}"
 
   #key_name = "Reza-East-1"
   key_name = "${var.ssh_key_pair}"
@@ -468,10 +459,19 @@ resource "aws_instance" "webapp02" {
     "${aws_security_group.web-app-sg.id}",
   ]
 
-  user_data = <<-EOF
-    #!/bin/bash
-    curl http://169.254.169.254/latest/meta-data/instance-id/ | sudo tee /var/www/html/index.html
-    EOF
+  ebs_block_device = {
+    volume_type           = "gp2"
+    volume_size           = "30"
+    delete_on_termination = true
+    encrypted             = true
+    device_name           = "/dev/sdb"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  user_data = "${file("user-data.sh")}"
 
   #key_name = "Reza-East-1"
   key_name = "${var.ssh_key_pair}"
@@ -499,6 +499,7 @@ resource "aws_db_instance" "rds" {
   password             = "${var.db_password}"
   parameter_group_name = "default.mysql5.7"
   availability_zone    = "${var.az01}"
+  skip_final_snapshot  = true
 
   tags {
     Name    = "WEB APP 02"
