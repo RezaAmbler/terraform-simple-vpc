@@ -1,0 +1,16 @@
+#Example backend for s3 with locking. Requires s3 bucket and dynamodb table.
+#See https://www.terraform.io/docs/backends/types/s3.html for parameters
+#
+#cannot use variables as this is pulled in before interpolation can happen
+#
+#To use rename to backend.tf and change parameters to match.
+#
+#To set up backend, please see http://us1-infgit-d01/brianw/terraform-remote-state
+terraform {
+  backend "s3" {
+    bucket = "state-store"
+    key    = "environment/system/state.tfstate"
+    region = "region"
+    dynamodb_table = "terraform-state-lock-table"
+  }
+}
